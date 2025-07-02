@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mushroom Man</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="gameHeader">
+            <h1>Mushroom Man</h1>
+            <div id="gameInfo">
+                <span id="levelNumber">Level: 1</span>
+                <span id="moveCount">Moves: 0</span>
+            </div>
+        </div>
+        
+        <svg id="gameGrid" viewBox="0 0 400 280" width="800" height="560">
+            <!-- Game tiles will be rendered here -->
+        </svg>
+        
+        <div id="resourcePanel">
+            <div id="levelInfo">Level 1</div>
+            <div id="resources">
+                <span class="resource">
+                    <span class="resource-icon">🔑</span>
+                    <span class="resource-count" id="keyCount">0</span>
+                </span>
+                <span class="resource">
+                    <span class="resource-icon">💰</span>
+                    <span class="resource-count" id="moneyCount">0</span>
+                </span>
+                <span class="resource">
+                    <span class="resource-icon">💣</span>
+                    <span class="resource-count" id="bombCount">0</span>
+                </span>
+                <span class="resource">
+                    <span class="resource-icon">🧨</span>
+                    <span class="resource-count" id="dynamiteCount">0</span>
+                </span>
+            </div>
+        </div>
+        
+        <div id="gameControls">
+            <p>Use Arrow Keys or WASD to move</p>
+            <button id="resetLevel">Reset Level</button>
+            <button id="nextLevel">Next Level</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
