@@ -141,46 +141,46 @@ class MushroomManGame {
                 element = this.createRect(tileX, tileY, '#444444', 'impenetrable-wall');
                 break;
             case 's': // Start/Player
-                element = this.createCircle(tileX + 10, tileY + 10, 8, '#FF6B35', 'player');
+                element = this.createSVGImage(tileX, tileY, './images/mushroom_man.svg', 'player');
                 break;
             case 'e': // Exit
-                element = this.createRect(tileX, tileY, '#00FF00', 'exit');
+                element = this.createSVGImage(tileX, tileY, './images/exit.svg', 'exit');
                 break;
             case 'l': // Lock
-                element = this.createRect(tileX, tileY, '#FFD700', 'lock');
+                element = this.createSVGImage(tileX, tileY, './images/lock.svg', 'lock');
                 break;
             case 'k': // Key
-                element = this.createCircle(tileX + 10, tileY + 10, 6, '#FFD700', 'key');
+                element = this.createSVGImage(tileX, tileY, './images/key.svg', 'key');
                 break;
             case 'h': // Hole
-                element = this.createCircle(tileX + 10, tileY + 10, 8, '#654321', 'hole');
+                element = this.createSVGImage(tileX, tileY, './images/hole.svg', 'hole');
                 break;
             case 'c': // Cement
-                element = this.createRect(tileX, tileY, '#808080', 'cement');
+                element = this.createSVGImage(tileX, tileY, './images/cement_sack.svg', 'cement');
                 break;
             case 'j': // Jellybean
-                element = this.createCircle(tileX + 10, tileY + 10, 6, '#FF1493', 'jellybean');
+                element = this.createSVGImage(tileX, tileY, './images/jelly_bean.svg', 'jellybean');
                 break;
             case 'b': // Bomb
-                element = this.createCircle(tileX + 10, tileY + 10, 8, '#000000', 'bomb');
+                element = this.createSVGImage(tileX, tileY, './images/bomb.svg', 'bomb');
                 break;
             case 'd': // Dynamite
-                element = this.createRect(tileX, tileY, '#FF4500', 'dynamite');
+                element = this.createSVGImage(tileX, tileY, './images/dynamite.svg', 'dynamite');
                 break;
             case 'g': // Guard
-                element = this.createCircle(tileX + 10, tileY + 10, 8, '#8B0000', 'guard');
+                element = this.createSVGImage(tileX, tileY, './images/guard.svg', 'guard');
                 break;
             case 'f': // Money
-                element = this.createCircle(tileX + 10, tileY + 10, 6, '#32CD32', 'money');
+                element = this.createSVGImage(tileX, tileY, './images/money.svg', 'money');
                 break;
             case 'o': // Oxygen
-                element = this.createCircle(tileX + 10, tileY + 10, 6, '#87CEEB', 'oxygen');
+                element = this.createSVGImage(tileX, tileY, './images/oxygen.svg', 'oxygen');
                 break;
             case 'n': // Gun
-                element = this.createRect(tileX, tileY, '#708090', 'gun');
+                element = this.createSVGImage(tileX, tileY, './images/gun.svg', 'gun');
                 break;
             case '~': // Water
-                element = this.createRect(tileX, tileY, '#0066CC', 'water');
+                element = this.createSVGImage(tileX, tileY, './images/water.svg', 'water');
                 break;
             case 't': // Teleporter
                 element = this.createCircle(tileX + 10, tileY + 10, 8, '#800080', 'teleporter');
@@ -220,6 +220,17 @@ class MushroomManGame {
         circle.setAttribute('stroke-width', '1');
         circle.setAttribute('class', className);
         return circle;
+    }
+    
+    createSVGImage(x, y, href, className) {
+        const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        image.setAttribute('x', x);
+        image.setAttribute('y', y);
+        image.setAttribute('width', this.tileSize);
+        image.setAttribute('height', this.tileSize);
+        image.setAttribute('href', href);
+        image.setAttribute('class', className);
+        return image;
     }
     
     updateResourceDisplay() {
@@ -283,8 +294,8 @@ class MushroomManGame {
             // Update player position
             const player = this.gameGrid.querySelector('.player');
             if (player) {
-                player.setAttribute('cx', newX * this.tileSize + 10);
-                player.setAttribute('cy', newY * this.tileSize + 10);
+                player.setAttribute('x', newX * this.tileSize);
+                player.setAttribute('y', newY * this.tileSize);
             }
             
             // Handle interactions
