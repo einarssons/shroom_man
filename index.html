@@ -9,46 +9,51 @@
 <body>
     <div id="gameContainer">
         <div id="gameHeader">
-            <h1>Mushroom Man</h1>
+            <h1 id="levelTitle">Level Title</h1>
             <div id="gameInfo">
                 <span id="levelNumber">Level: 1</span>
-                <span id="moveCount">Moves: 0</span>
+                <span id="levelAuthor">Author</span>
             </div>
         </div>
-        
+
         <svg id="gameGrid" viewBox="0 0 400 280" width="800" height="560">
             <!-- Game tiles will be rendered here -->
         </svg>
-        
+
         <div id="resourcePanel">
-            <div id="levelInfo">Level 1</div>
             <div id="resources">
                 <span class="resource">
-                    <span class="resource-icon">🔑</span>
+                    <img src="./images/key.svg" class="resource-icon" alt="Key">
                     <span class="resource-count" id="keyCount">0</span>
                 </span>
                 <span class="resource">
-                    <span class="resource-icon">💰</span>
+                    <img src="./images/money.svg" class="resource-icon" alt="Money">
                     <span class="resource-count" id="moneyCount">0</span>
                 </span>
                 <span class="resource">
-                    <span class="resource-icon">💣</span>
-                    <span class="resource-count" id="bombCount">0</span>
+                    <img src="./images/cement_sack.svg" class="resource-icon" alt="Cement">
+                    <span class="resource-count" id="cementCount">0</span>
                 </span>
                 <span class="resource">
-                    <span class="resource-icon">🧨</span>
-                    <span class="resource-count" id="dynamiteCount">0</span>
+                    <img src="./images/oxygen.svg" class="resource-icon" alt="Oxygen">
+                    <span class="resource-count" id="oxygenCount">0</span>
+                </span>
+            </div>
+            <div id="movesCounter">
+                <span class="resource">
+                    <span class="resource-icon">Moves:</span>
+                    <span class="resource-count" id="moveCount">0</span>
                 </span>
             </div>
         </div>
-        
+
         <div id="gameControls">
             <p>Use Arrow Keys or WASD to move</p>
             <button id="resetLevel">Reset Level</button>
             <button id="nextLevel">Next Level</button>
         </div>
     </div>
-    
+
     <script src="game.js"></script>
 </body>
 </html>

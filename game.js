@@ -7,8 +7,8 @@ class MushroomManGame {
         this.resources = {
             keys: 0,
             money: 0,
-            bombs: 0,
-            dynamite: 0
+            cement: 0,
+            oxygen: 0
         };
         this.moveCount = 0;
         this.tileSize = 20;
@@ -90,15 +90,16 @@ class MushroomManGame {
         const level = this.levels[levelIndex];
         this.currentLevel = levelIndex;
         this.moveCount = 0;
-        this.resources = { keys: 0, money: 0, bombs: 0, dynamite: 0 };
+        this.resources = { keys: 0, money: 0, cement: 0, oxygen: 0 };
         
         // Clear previous level
         this.gameGrid.innerHTML = '';
         
         // Update UI
         document.getElementById('levelNumber').textContent = `Level: ${levelIndex + 1}`;
-        document.getElementById('moveCount').textContent = `Moves: ${this.moveCount}`;
-        document.getElementById('levelInfo').textContent = `Level ${levelIndex + 1}`;
+        document.getElementById('moveCount').textContent = `${this.moveCount}`;
+        document.getElementById('levelTitle').textContent = level.title || 'Untitled';
+        document.getElementById('levelAuthor').textContent = `Author: ${level.author || 'Unknown'}`;
         
         // Render level
         this.renderLevel(level);
@@ -236,8 +237,8 @@ class MushroomManGame {
     updateResourceDisplay() {
         document.getElementById('keyCount').textContent = this.resources.keys;
         document.getElementById('moneyCount').textContent = this.resources.money;
-        document.getElementById('bombCount').textContent = this.resources.bombs;
-        document.getElementById('dynamiteCount').textContent = this.resources.dynamite;
+        document.getElementById('cementCount').textContent = this.resources.cement;
+        document.getElementById('oxygenCount').textContent = this.resources.oxygen;
     }
     
     setupControls() {
@@ -302,7 +303,7 @@ class MushroomManGame {
             this.handleTileInteraction(newX, newY);
             
             // Update UI
-            document.getElementById('moveCount').textContent = `Moves: ${this.moveCount}`;
+            document.getElementById('moveCount').textContent = `${this.moveCount}`;
         }
     }
     
@@ -340,12 +341,12 @@ class MushroomManGame {
                 this.resources.money++;
                 tile.remove();
                 break;
-            case 'b': // Bomb
-                this.resources.bombs++;
+            case 'c': // Cement
+                this.resources.cement++;
                 tile.remove();
                 break;
-            case 'd': // Dynamite
-                this.resources.dynamite++;
+            case 'o': // Oxygen
+                this.resources.oxygen++;
                 tile.remove();
                 break;
             case 'l': // Lock

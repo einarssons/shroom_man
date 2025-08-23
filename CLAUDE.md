@@ -11,7 +11,7 @@ This repository contains both the original **Mushroom Man** Windows puzzle game 
 ### Browser Game (New Implementation)
 - `index.html` - Main game HTML with SVG container and resource panel
 - `game.js` - JavaScript game engine with level parser and rendering
-- `style.css` - CSS styling for game interface
+- `style.css` - CSS styling with dark theme and responsive design
 - `levels/orig.txt` - Level data in original format
 
 ### Original Game Archive
@@ -85,7 +85,9 @@ The level format uses a simple text-based grid system that could be useful for:
 - Resource tracking panel (keys, money, bombs, dynamite)
 - Player movement with collision detection
 - Level progression system
-- Responsive grid layout
+- Dark theme UI with retro game aesthetic
+- Responsive design for mobile devices
+- Smooth animations and hover effects
 
 ### Technical Details
 - `MushroomManGame` class handles game state and rendering
