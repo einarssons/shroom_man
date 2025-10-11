@@ -496,6 +496,29 @@ class MushroomManGame {
                 document.getElementById('modalGoToLevel').click();
             }
         });
+
+        // Global keyboard handler for modal shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                // Check if level complete modal is showing
+                const levelCompleteModal = document.getElementById('levelCompleteModal');
+                if (levelCompleteModal && levelCompleteModal.classList.contains('show')) {
+                    // Trigger next level (same as clicking "Next Level" button)
+                    document.getElementById('modalNextLevel').click();
+                    e.preventDefault();
+                    return;
+                }
+
+                // Check if level failed modal is showing
+                const levelFailedModal = document.getElementById('levelFailedModal');
+                if (levelFailedModal && levelFailedModal.classList.contains('show')) {
+                    // Trigger retry (same as clicking "Try Again" button)
+                    document.getElementById('modalRetry').click();
+                    e.preventDefault();
+                    return;
+                }
+            }
+        });
     }
 
     showModal(modalId, title, message) {
