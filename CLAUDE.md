@@ -157,9 +157,13 @@ All core mechanics from the original game are fully implemented:
 
 ### Version Numbering
 - The version number is displayed in the game UI (index.html, #gameVersion)
-- **IMPORTANT**: Increment the version number in `index.html` with each commit that changes gameplay mechanics, features, or user-facing functionality
+- **IMPORTANT**: When incrementing the version number, update it in TWO places:
+  1. `<div id="gameVersion">vX.Y.Z</div>` - displays in UI
+  2. `<script src="game.js?v=X.Y.Z"></script>` - cache-busting for JavaScript
+- Increment the version with each commit that changes gameplay mechanics, features, or user-facing functionality
 - Use semantic versioning format: `vMAJOR.MINOR.PATCH`
   - **MAJOR**: Breaking changes or major feature additions
   - **MINOR**: New features or significant improvements
   - **PATCH**: Bug fixes or minor tweaks
+- The query parameter on game.js forces browsers (especially Safari) to reload the JavaScript file instead of using cached versions
 - Version number helps users verify they're running the latest version (avoids cache issues on mobile)
