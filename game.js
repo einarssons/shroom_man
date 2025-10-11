@@ -1238,9 +1238,10 @@ class MushroomManGame {
     }
 
     handleLevelComplete() {
-        // Get previous best score
+        // Get previous best score (save the value, not the reference)
         const prevProgress = this.getLevelProgress(this.currentLevel);
-        const isNewBest = prevProgress.bestMoves === null || this.moveCount < prevProgress.bestMoves;
+        const previousBestMoves = prevProgress.bestMoves;
+        const isNewBest = previousBestMoves === null || this.moveCount < previousBestMoves;
 
         // Update progress
         this.updateLevelProgress(this.currentLevel, this.moveCount);
@@ -1249,13 +1250,13 @@ class MushroomManGame {
         let message = `You completed Level ${this.currentLevel + 1} in ${this.moveCount} moves!`;
 
         if (isNewBest) {
-            if (prevProgress.bestMoves === null) {
+            if (previousBestMoves === null) {
                 message += '\n🎉 First time completing this level!';
             } else {
-                message += `\n🏆 New best! (Previous: ${prevProgress.bestMoves} moves)`;
+                message += `\n🏆 New best! (Previous: ${previousBestMoves} moves)`;
             }
         } else {
-            message += `\n⭐ Your best: ${prevProgress.bestMoves} moves`;
+            message += `\n⭐ Your best: ${previousBestMoves} moves`;
         }
 
         if (this.currentLevel < this.levels.length - 1) {
