@@ -1,0 +1,14 @@
+# Claude Code files
+.claude/
+
+# Playwright MCP files
+.playwright-mcp/
+
+# Original game files (keep in repo but not track changes)
+MushroomMan/
+
+# Original sound files (keep in repo but not track changes)
+orig_sound/
+
+# Other
+.DS_Store
