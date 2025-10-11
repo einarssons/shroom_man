@@ -74,11 +74,25 @@ body {
 #movesCounter {
     margin-left: auto;
     padding-left: 20px;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 #movesCounter .resource {
-    min-width: 80px;
+    min-width: 100px;
     justify-content: flex-end;
+}
+
+#movesCounter .resource-icon {
+    font-size: 1em;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    margin-right: 5px;
 }
 
 .resource {
@@ -149,37 +163,147 @@ body {
     filter: brightness(1.2);
 }
 
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #34495e;
+    border: 3px solid #e74c3c;
+    border-radius: 15px;
+    padding: 40px;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+    animation: slideIn 0.3s ease;
+}
+
+.modal-content h2 {
+    color: #e74c3c;
+    font-size: 2.5em;
+    margin: 0 0 20px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content p {
+    color: #ecf0f1;
+    font-size: 1.3em;
+    margin: 20px 0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.modal-button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Courier New', monospace;
+}
+
+.modal-button:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+}
+
+.modal-button:active {
+    transform: translateY(0);
+}
+
+.modal-button.secondary {
+    background-color: #3498db;
+}
+
+.modal-button.secondary:hover {
+    background-color: #2980b9;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     body {
         padding: 10px;
     }
-    
+
     #gameContainer {
         padding: 15px;
     }
-    
+
     #gameHeader h1 {
         font-size: 2em;
     }
-    
+
     #gameGrid {
         width: 100%;
         height: auto;
     }
-    
+
     #resources {
         gap: 10px;
     }
-    
+
     .resource {
         padding: 3px 6px;
         font-size: 0.9em;
     }
-    
+
     #gameControls button {
         padding: 8px 15px;
         margin: 5px;
         font-size: 0.9em;
+    }
+
+    .modal-content {
+        padding: 30px 20px;
+        margin: 20px;
+    }
+
+    .modal-content h2 {
+        font-size: 2em;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
     }
 }

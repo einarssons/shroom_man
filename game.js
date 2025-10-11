@@ -12,9 +12,10 @@ class MushroomManGame {
         };
         this.moveCount = 0;
         this.tileSize = 20;
-        
+
         this.loadLevels();
         this.setupControls();
+        this.setupModals();
     }
     
     async loadLevels() {
@@ -270,55 +271,147 @@ class MushroomManGame {
                     break;
             }
         });
-        
+
         document.getElementById('resetLevel').addEventListener('click', () => {
             this.loadLevel(this.currentLevel);
         });
-        
+
         document.getElementById('nextLevel').addEventListener('click', () => {
             if (this.currentLevel < this.levels.length - 1) {
                 this.loadLevel(this.currentLevel + 1);
             }
         });
     }
+
+    setupModals() {
+        // Level complete modal buttons
+        document.getElementById('modalNextLevel').addEventListener('click', () => {
+            this.hideModal('levelCompleteModal');
+            if (this.currentLevel < this.levels.length - 1) {
+                this.loadLevel(this.currentLevel + 1);
+            }
+        });
+
+        document.getElementById('modalRestart').addEventListener('click', () => {
+            this.hideModal('levelCompleteModal');
+            this.loadLevel(this.currentLevel);
+        });
+
+        // Level failed modal button
+        document.getElementById('modalRetry').addEventListener('click', () => {
+            this.hideModal('levelFailedModal');
+            this.loadLevel(this.currentLevel);
+        });
+    }
+
+    showModal(modalId, title, message) {
+        // Hide all modals first
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+
+        const modal = document.getElementById(modalId);
+        if (title) {
+            const titleElement = modal.querySelector('h2');
+            if (titleElement) titleElement.textContent = title;
+        }
+        if (message) {
+            const messageElement = modal.querySelector('p');
+            if (messageElement) messageElement.textContent = message;
+        }
+        modal.classList.add('show');
+    }
+
+    hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.remove('show');
+    }
     
     movePlayer(dx, dy) {
         const newX = this.playerPos.x + dx;
         const newY = this.playerPos.y + dy;
-        
+
+        // Check if there's a jellybean to push
+        const tile = this.getTileAt(newX, newY);
+        if (tile && tile.getAttribute('data-symbol') === 'j') {
+            // Try to push the jellybean
+            const behindX = newX + dx;
+            const behindY = newY + dy;
+            const behindTile = this.getTileAt(behindX, behindY);
+
+            if (!behindTile) {
+                // Empty space behind - push the jellybean
+                tile.setAttribute('x', behindX * this.tileSize);
+                tile.setAttribute('y', behindY * this.tileSize);
+                tile.setAttribute('data-x', behindX);
+                tile.setAttribute('data-y', behindY);
+            }
+        }
+
         // Check bounds and collision
-        if (this.canMoveTo(newX, newY)) {
+        if (this.canMoveTo(newX, newY, dx, dy)) {
             this.playerPos.x = newX;
             this.playerPos.y = newY;
             this.moveCount++;
-            
+
             // Update player position
             const player = this.gameGrid.querySelector('.player');
             if (player) {
                 player.setAttribute('x', newX * this.tileSize);
                 player.setAttribute('y', newY * this.tileSize);
+
+                // Ensure player is always on top by moving to end of SVG
+                this.gameGrid.appendChild(player);
             }
-            
-            // Handle interactions
-            this.handleTileInteraction(newX, newY);
-            
+
+            // Handle interactions (pass direction for gun)
+            this.handleTileInteraction(newX, newY, dx, dy);
+
             // Update UI
             document.getElementById('moveCount').textContent = `${this.moveCount}`;
         }
     }
     
-    canMoveTo(x, y) {
+    canMoveTo(x, y, dx, dy) {
         const tile = this.getTileAt(x, y);
         if (!tile) return true; // Empty space - can move
-        
+
         const symbol = tile.getAttribute('data-symbol');
-        
+
         // Can't move through walls
         if (symbol === 'w' || symbol === 'i') return false;
-        
+
         // Can't move through locks without keys
         if (symbol === 'l' && this.resources.keys === 0) return false;
-        
+
+        // Can't move through guards without money
+        if (symbol === 'g' && this.resources.money === 0) return false;
+
+        // Jellybean - can push if there's empty space behind it
+        if (symbol === 'j') {
+            const behindX = x + dx;
+            const behindY = y + dy;
+            const behindTile = this.getTileAt(behindX, behindY);
+            // Can only push if space behind is empty
+            return !behindTile;
+        }
+
+        // Check hole - need cement to cross or player dies
+        if (symbol === 'h') {
+            if (this.resources.cement === 0) {
+                // Player falls into hole and dies - move player there first so they disappear into hole
+                return true; // Allow movement into hole so player sprite moves there
+            }
+            // Has cement - will fill hole in handleTileInteraction
+        }
+
+        // Check water - need oxygen or player drowns
+        if (symbol === '~') {
+            if (this.resources.oxygen === 0) {
+                // Player drowns - move player there first so they enter the water
+                return true; // Allow movement into water so player sprite moves there
+            }
+            // Has oxygen - will consume in handleTileInteraction
+        }
+
         return true;
     }
     
@@ -326,12 +419,12 @@ class MushroomManGame {
         return this.gameGrid.querySelector(`[data-x="${x}"][data-y="${y}"]`);
     }
     
-    handleTileInteraction(x, y) {
+    handleTileInteraction(x, y, dx = 0, dy = 0) {
         const tile = this.getTileAt(x, y);
         if (!tile) return;
-        
+
         const symbol = tile.getAttribute('data-symbol');
-        
+
         switch (symbol) {
             case 'k': // Key
                 this.resources.keys++;
@@ -346,7 +439,7 @@ class MushroomManGame {
                 tile.remove();
                 break;
             case 'o': // Oxygen
-                this.resources.oxygen++;
+                this.resources.oxygen += 3; // Each oxygen tank gives 3 units
                 tile.remove();
                 break;
             case 'l': // Lock
@@ -355,20 +448,197 @@ class MushroomManGame {
                     tile.remove();
                 }
                 break;
+            case 'g': // Guard
+                if (this.resources.money > 0) {
+                    this.resources.money--;
+                    tile.remove(); // Bribe guard and they disappear
+                }
+                break;
+            case 'b': // Bomb
+                this.explodeBomb(x, y, false); // false = don't destroy impenetrable walls
+                this.checkExitDestroyed();
+                break;
+            case 'd': // Dynamite
+                this.explodeBomb(x, y, true); // true = destroy impenetrable walls
+                this.checkExitDestroyed();
+                break;
+            case 'n': // Gun
+                this.fireGun(x, y, dx, dy);
+                tile.remove(); // Gun is consumed after firing
+                break;
+            case 'h': // Hole
+                if (this.resources.cement > 0) {
+                    // Fill hole with cement - hole becomes traversable plain area
+                    this.resources.cement--;
+                    tile.remove(); // Remove the hole, it's now filled
+                } else {
+                    // Player falls into hole and dies
+                    const player = this.gameGrid.querySelector('.player');
+                    if (player) {
+                        player.remove(); // Remove player sprite
+                    }
+                    // Use setTimeout to show player disappearing before modal
+                    setTimeout(() => {
+                        this.showModal('levelFailedModal', 'Level Failed', 'You fell into a hole!');
+                    }, 300);
+                }
+                break;
+            case '~': // Water
+                if (this.resources.oxygen > 0) {
+                    // Consume oxygen to swim through water (water tile remains)
+                    this.resources.oxygen--;
+                } else {
+                    // Player drowns
+                    const player = this.gameGrid.querySelector('.player');
+                    if (player) {
+                        player.remove(); // Remove player sprite
+                    }
+                    // Use setTimeout to show player disappearing before modal
+                    setTimeout(() => {
+                        this.showModal('levelFailedModal', 'Level Failed', 'You drowned! You need oxygen to cross water.');
+                    }, 300);
+                }
+                break;
             case 'e': // Exit
-                this.handleLevelComplete();
+                // Remove the exit door
+                tile.remove();
+                // Use setTimeout to show player at exit before completing
+                setTimeout(() => {
+                    this.handleLevelComplete();
+                }, 200);
                 break;
         }
-        
+
         this.updateResourceDisplay();
     }
     
+    checkExitDestroyed() {
+        // Check if exit still exists on the grid
+        const exitExists = this.gameGrid.querySelector('[data-symbol="e"]');
+        if (!exitExists) {
+            // Exit was destroyed by explosion - level cannot be completed
+            setTimeout(() => {
+                this.showModal('levelFailedModal', 'Level Failed', 'The exit was destroyed! Level cannot be completed.');
+            }, 500);
+        }
+    }
+
+    fireGun(gunX, gunY, dx, dy) {
+        console.log(`Gun fired from (${gunX}, ${gunY}) in direction (${dx}, ${dy})`);
+
+        // Bullet travels in the direction the player was moving
+        let bulletX = gunX + dx;
+        let bulletY = gunY + dy;
+
+        // Keep moving bullet until it hits something
+        while (true) {
+            const tile = this.getTileAt(bulletX, bulletY);
+
+            // If no tile (empty space or out of bounds), bullet continues
+            if (!tile) {
+                bulletX += dx;
+                bulletY += dy;
+                continue;
+            }
+
+            const symbol = tile.getAttribute('data-symbol');
+            console.log(`Bullet hit ${symbol} at (${bulletX}, ${bulletY})`);
+
+            // Impenetrable walls stop the bullet but are not destroyed
+            if (symbol === 'i') {
+                console.log('Bullet stopped by impenetrable wall');
+                break;
+            }
+
+            // Bomb or dynamite - trigger explosion
+            if (symbol === 'b') {
+                tile.remove();
+                this.explodeBomb(bulletX, bulletY, false);
+                this.checkExitDestroyed();
+                break;
+            }
+
+            if (symbol === 'd') {
+                tile.remove();
+                this.explodeBomb(bulletX, bulletY, true);
+                this.checkExitDestroyed();
+                break;
+            }
+
+            // Everything else - destroy the first thing hit and stop
+            tile.remove();
+            console.log(`Destroyed ${symbol}`);
+
+            // Check if exit was destroyed
+            if (symbol === 'e') {
+                this.checkExitDestroyed();
+            }
+            break;
+        }
+    }
+
+    explodeBomb(centerX, centerY, destroysImpenetrable) {
+        console.log(`Explosion at (${centerX}, ${centerY}), destroysImpenetrable: ${destroysImpenetrable}`);
+
+        // Remove the bomb/dynamite itself first
+        const centerTile = this.getTileAt(centerX, centerY);
+        if (centerTile) {
+            centerTile.remove();
+        }
+
+        // Collect all tiles to destroy first, then remove them
+        // This prevents chain reactions from bombs being removed during iteration
+        const tilesToDestroy = [];
+
+        // Explode in a 3x3 area around the center
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const x = centerX + dx;
+                const y = centerY + dy;
+
+                // Skip the center (already removed)
+                if (dx === 0 && dy === 0) continue;
+
+                const tile = this.getTileAt(x, y);
+                if (!tile) continue;
+
+                const symbol = tile.getAttribute('data-symbol');
+                console.log(`  Checking tile at (${x}, ${y}): ${symbol}`);
+
+                // Player is never destroyed by explosions
+                if (symbol === 's') continue;
+
+                // Impenetrable walls only destroyed by dynamite
+                if (symbol === 'i' && !destroysImpenetrable) continue;
+
+                // Add tile to destroy list
+                tilesToDestroy.push(tile);
+            }
+        }
+
+        // Now remove all tiles at once (prevents chain reactions)
+        for (const tile of tilesToDestroy) {
+            const symbol = tile.getAttribute('data-symbol');
+            const x = tile.getAttribute('data-x');
+            const y = tile.getAttribute('data-y');
+            console.log(`  Destroying tile at (${x}, ${y}): ${symbol}`);
+            tile.remove();
+        }
+    }
+
     handleLevelComplete() {
-        alert(`Level ${this.currentLevel + 1} completed in ${this.moveCount} moves!`);
         if (this.currentLevel < this.levels.length - 1) {
-            this.loadLevel(this.currentLevel + 1);
+            this.showModal(
+                'levelCompleteModal',
+                'Level Complete!',
+                `You completed Level ${this.currentLevel + 1} in ${this.moveCount} moves!`
+            );
         } else {
-            alert('Congratulations! You completed all levels!');
+            this.showModal(
+                'levelCompleteModal',
+                'Congratulations!',
+                `You completed all ${this.levels.length} levels! Final level completed in ${this.moveCount} moves.`
+            );
         }
     }
 }
