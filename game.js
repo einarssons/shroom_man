@@ -942,19 +942,25 @@ class MushroomManGame {
         // 1 = up, 2 = down, 3 = left, 4 = right
         let exitX = portalX;
         let exitY = portalY;
+        let dx = 0;
+        let dy = 0;
 
         switch (exitDirection) {
             case 1: // Up
                 exitY -= 1;
+                dy = -1;
                 break;
             case 2: // Down
                 exitY += 1;
+                dy = 1;
                 break;
             case 3: // Left
                 exitX -= 1;
+                dx = -1;
                 break;
             case 4: // Right
                 exitX += 1;
+                dx = 1;
                 break;
         }
 
@@ -970,8 +976,8 @@ class MushroomManGame {
             this.gameGrid.appendChild(player); // Ensure player is on top
         }
 
-        // Handle interaction at the exit tile
-        this.handleTileInteraction(exitX, exitY);
+        // Handle interaction at the exit tile (pass direction for gun)
+        this.handleTileInteraction(exitX, exitY, dx, dy);
     }
 
     destroyPortalPair(pairId) {
