@@ -447,6 +447,97 @@ class MushroomManGame {
         document.getElementById('chooseLevel').addEventListener('click', () => {
             this.showLevelSelector();
         });
+
+        // Setup touch/swipe controls for mobile devices
+        this.setupTouchControls();
+    }
+
+    setupTouchControls() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        // Minimum swipe distance in pixels to register as a swipe (not a tap)
+        const minSwipeDistance = 30;
+
+        // Add touch listeners to the game grid
+        const gameGrid = document.getElementById('gameGrid');
+
+        gameGrid.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        gameGrid.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY, minSwipeDistance);
+            e.preventDefault(); // Prevent default touch behavior
+        }, { passive: false });
+
+        // Prevent double-tap zoom on the game grid
+        gameGrid.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault(); // Prevent pinch zoom
+            }
+        }, { passive: false });
+
+        // Add touch listener to the entire game container for convenience
+        const gameContainer = document.getElementById('gameContainer');
+
+        gameContainer.addEventListener('touchstart', (e) => {
+            // Only handle touches on the game area, not buttons/modals
+            if (e.target.closest('button') || e.target.closest('.modal')) {
+                return;
+            }
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        gameContainer.addEventListener('touchend', (e) => {
+            // Only handle touches on the game area, not buttons/modals
+            if (e.target.closest('button') || e.target.closest('.modal')) {
+                return;
+            }
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY, minSwipeDistance);
+            e.preventDefault();
+        }, { passive: false });
+    }
+
+    handleSwipe(startX, startY, endX, endY, minDistance) {
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+        const absDeltaX = Math.abs(deltaX);
+        const absDeltaY = Math.abs(deltaY);
+
+        // Check if swipe distance meets minimum threshold
+        if (absDeltaX < minDistance && absDeltaY < minDistance) {
+            return; // Too short to be a swipe, likely a tap
+        }
+
+        // Determine swipe direction based on which axis has larger movement
+        if (absDeltaX > absDeltaY) {
+            // Horizontal swipe
+            if (deltaX > 0) {
+                // Swipe right
+                this.movePlayer(1, 0);
+            } else {
+                // Swipe left
+                this.movePlayer(-1, 0);
+            }
+        } else {
+            // Vertical swipe
+            if (deltaY > 0) {
+                // Swipe down
+                this.movePlayer(0, 1);
+            } else {
+                // Swipe up
+                this.movePlayer(0, -1);
+            }
+        }
     }
 
     setupModals() {
