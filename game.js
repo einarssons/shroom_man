@@ -457,52 +457,58 @@ class MushroomManGame {
         let touchStartY = 0;
         let touchEndX = 0;
         let touchEndY = 0;
+        let isTouchActive = false;
 
         // Minimum swipe distance in pixels to register as a swipe (not a tap)
-        const minSwipeDistance = 30;
+        const minSwipeDistance = 40;
 
-        // Add touch listeners to the game grid
+        // Cooldown to prevent rapid-fire moves (in milliseconds)
+        const moveCooldown = 250;
+        let lastMoveTime = 0;
+
+        // Add touch listeners to the game grid only (not container to avoid duplicates)
         const gameGrid = document.getElementById('gameGrid');
 
         gameGrid.addEventListener('touchstart', (e) => {
+            // Prevent pinch zoom
+            if (e.touches.length > 1) {
+                e.preventDefault();
+                return;
+            }
+
+            isTouchActive = true;
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
-        }, { passive: true });
+        }, { passive: false });
 
         gameGrid.addEventListener('touchend', (e) => {
+            if (!isTouchActive) return;
+
+            const now = Date.now();
+            const timeSinceLastMove = now - lastMoveTime;
+
+            // Enforce cooldown
+            if (timeSinceLastMove < moveCooldown) {
+                isTouchActive = false;
+                e.preventDefault();
+                return;
+            }
+
             touchEndX = e.changedTouches[0].screenX;
             touchEndY = e.changedTouches[0].screenY;
-            this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY, minSwipeDistance);
+
+            const moved = this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY, minSwipeDistance);
+
+            if (moved) {
+                lastMoveTime = now;
+            }
+
+            isTouchActive = false;
             e.preventDefault(); // Prevent default touch behavior
         }, { passive: false });
 
-        // Prevent double-tap zoom on the game grid
-        gameGrid.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) {
-                e.preventDefault(); // Prevent pinch zoom
-            }
-        }, { passive: false });
-
-        // Add touch listener to the entire game container for convenience
-        const gameContainer = document.getElementById('gameContainer');
-
-        gameContainer.addEventListener('touchstart', (e) => {
-            // Only handle touches on the game area, not buttons/modals
-            if (e.target.closest('button') || e.target.closest('.modal')) {
-                return;
-            }
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, { passive: true });
-
-        gameContainer.addEventListener('touchend', (e) => {
-            // Only handle touches on the game area, not buttons/modals
-            if (e.target.closest('button') || e.target.closest('.modal')) {
-                return;
-            }
-            touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
-            this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY, minSwipeDistance);
+        // Prevent touch move (dragging) which could interfere
+        gameGrid.addEventListener('touchmove', (e) => {
             e.preventDefault();
         }, { passive: false });
     }
@@ -515,7 +521,7 @@ class MushroomManGame {
 
         // Check if swipe distance meets minimum threshold
         if (absDeltaX < minDistance && absDeltaY < minDistance) {
-            return; // Too short to be a swipe, likely a tap
+            return false; // Too short to be a swipe, likely a tap
         }
 
         // Determine swipe direction based on which axis has larger movement
@@ -538,6 +544,8 @@ class MushroomManGame {
                 this.movePlayer(0, -1);
             }
         }
+
+        return true; // A move was attempted
     }
 
     setupModals() {
