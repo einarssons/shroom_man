@@ -170,6 +170,14 @@ body {
     transform: translateY(1px);
 }
 
+#gameVersion {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.9em;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
 /* SVG tile animations */
 .player {
     transition: cx 0.2s ease, cy 0.2s ease;

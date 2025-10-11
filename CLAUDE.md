@@ -120,7 +120,12 @@ All core mechanics from the original game are fully implemented:
    - Water tiles remain after crossing (reusable)
    - Drowning without oxygen causes level failure
 9. **Exit**: Walking into exit completes level (exit can be destroyed by explosions)
-10. **Teleporters**: Transport between numbered pairs (not yet implemented)
+10. **Teleporters/Portals**:
+   - Color-coded pairs (9 different colors) with animated wave effects
+   - Directional arrows indicating exit direction
+   - Format: `tXY` where X=pair ID (1-9), Y=exit direction (1=up, 2=down, 3=left, 4=right)
+   - Validates exit destination before allowing entry
+   - Destroying one portal destroys its paired portal
 
 ### Technical Details
 - **`MushroomManGame` class**: Manages game state, rendering, and user input
@@ -133,7 +138,6 @@ All core mechanics from the original game are fully implemented:
 - **Conventional commit format**: All changes follow conventional commit standards
 
 ### Known Limitations
-- Teleporters (`t##`) are parsed but not yet implemented in movement logic
 - No sound effects (original game had .wav and .mid audio files)
 - No replay recording/playback (original game had .mmr replay files)
 - No level editor (original game included one)
@@ -150,3 +154,12 @@ All core mechanics from the original game are fully implemented:
 
 ### Commit Practices
 - Use conventional commits
+
+### Version Numbering
+- The version number is displayed in the game UI (index.html, #gameVersion)
+- **IMPORTANT**: Increment the version number in `index.html` with each commit that changes gameplay mechanics, features, or user-facing functionality
+- Use semantic versioning format: `vMAJOR.MINOR.PATCH`
+  - **MAJOR**: Breaking changes or major feature additions
+  - **MINOR**: New features or significant improvements
+  - **PATCH**: Bug fixes or minor tweaks
+- Version number helps users verify they're running the latest version (avoids cache issues on mobile)
