@@ -30,7 +30,7 @@ The game uses various symbols in its level files (`MushroomMan/levels.dat` and `
 ### Interactive Objects
 - `j` = Jellybean (can be pushed)
 - `b` = Bomb (destroys walls)
-- `d` = Dynamite (destroys impenetrable walls)
+- `d` = Dynamite (destroys player, not allowed to explode)
 - `g` = Guard
 - `f` = Money/Finance (to bribe guards)
 - `o` = Oxygen tank
@@ -44,11 +44,12 @@ The game uses various symbols in its level files (`MushroomMan/levels.dat` and `
 ### Teleports
 - `t##` = Teleport pairs (where ## is a two-digit number)
   - Examples: `t11`, `t12`, `t21`, `t22`, etc.
-  - Teleports with the same number are connected to each other
+  - Teleports with the same first digit are connected to each other
+  - The second digit is the direction one exits, 1 up, 2 down, 3 left, 4 right
 
 ### Gameplay Mechanics
 The player moves around step by step, either horizontally
-or vertically. The goal is to move from Start to End.
+or vertically. The goal is to move from Start to Exit.
 Fewer steps is better.
 
 Based on level titles and element interactions:
