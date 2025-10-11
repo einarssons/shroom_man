@@ -48,7 +48,7 @@ body {
     font-weight: bold;
 }
 
-#levelBest {
+#movesInfo {
     color: #f39c12;
     font-weight: bold;
 }
@@ -84,30 +84,8 @@ body {
 #resources {
     display: flex;
     gap: 20px;
-}
-
-#movesCounter {
-    margin-left: auto;
-    padding-left: 20px;
-    font-weight: bold;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#movesCounter .resource {
-    min-width: 100px;
-    justify-content: flex-end;
-}
-
-#movesCounter .resource-icon {
-    font-size: 1.2em;
-    width: auto;
-    height: auto;
-    max-width: none;
-    max-height: none;
-    margin-right: 5px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .resource {

@@ -154,7 +154,18 @@ class MushroomManGame {
         // Remove digits from teleporter codes (t11 -> t)
         return line.replace(/t\d+/g, 't');
     }
-    
+
+    updateMovesDisplay() {
+        const progress = this.getLevelProgress(this.currentLevel);
+        const movesInfo = document.getElementById('movesInfo');
+
+        if (progress.completed && progress.bestMoves !== null) {
+            movesInfo.textContent = `Moves: ${this.moveCount} (Best: ${progress.bestMoves})`;
+        } else {
+            movesInfo.textContent = `Moves: ${this.moveCount}`;
+        }
+    }
+
     loadLevel(levelIndex) {
         if (levelIndex >= this.levels.length) return;
 
@@ -169,24 +180,11 @@ class MushroomManGame {
         // Clear previous level
         this.gameGrid.innerHTML = '';
 
-        // Get progress for this level
-        const progress = this.getLevelProgress(levelIndex);
-
         // Update UI
         document.getElementById('levelNumber').textContent = `Level: ${levelIndex + 1}`;
-        document.getElementById('moveCount').textContent = `${this.moveCount}`;
         document.getElementById('levelTitle').textContent = level.title || 'Untitled';
         document.getElementById('levelAuthor').textContent = `Author: ${level.author || 'Unknown'}`;
-
-        // Display best score if level has been completed
-        const bestElement = document.getElementById('levelBest');
-        if (progress.completed && progress.bestMoves !== null) {
-            bestElement.textContent = `⭐ Best: ${progress.bestMoves} moves`;
-            bestElement.style.display = 'inline';
-        } else {
-            bestElement.textContent = '';
-            bestElement.style.display = 'none';
-        }
+        this.updateMovesDisplay();
 
         // Render level
         this.renderLevel(level);
@@ -818,7 +816,7 @@ class MushroomManGame {
             this.handleTileInteraction(newX, newY, dx, dy);
 
             // Update UI
-            document.getElementById('moveCount').textContent = `${this.moveCount}`;
+            this.updateMovesDisplay();
         }
     }
     
