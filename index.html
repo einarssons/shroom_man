@@ -48,9 +48,10 @@
         </div>
 
         <div id="gameControls">
-            <p>Use Arrow Keys or WASD to move</p>
+            <p>Use Arrow Keys or WASD to move | N: Next Level | P: Previous Level | L: Choose Level</p>
             <button id="resetLevel">Reset Level</button>
             <button id="nextLevel">Next Level</button>
+            <button id="chooseLevel">Choose Level</button>
         </div>
     </div>
 
@@ -73,6 +74,23 @@
             <p id="failMessage">You fell into a hole!</p>
             <div class="modal-buttons">
                 <button id="modalRetry" class="modal-button">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Selector Modal -->
+    <div id="levelSelectorModal" class="modal">
+        <div class="modal-content">
+            <h2>Choose Level</h2>
+            <div class="level-selector">
+                <label for="levelInput">Level Number (1-<span id="maxLevel">175</span>):</label>
+                <input type="number" id="levelInput" min="1" max="175" value="1">
+                <p id="levelPreview" class="level-preview">Level: <span id="previewTitle">Loading...</span></p>
+                <p id="levelError" class="level-error"></p>
+            </div>
+            <div class="modal-buttons">
+                <button id="modalGoToLevel" class="modal-button">Go to Level</button>
+                <button id="modalCancelLevel" class="modal-button secondary">Cancel</button>
             </div>
         </div>
     </div>

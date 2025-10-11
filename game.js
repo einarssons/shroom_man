@@ -269,6 +269,28 @@ class MushroomManGame {
                     this.movePlayer(1, 0);
                     e.preventDefault();
                     break;
+                case 'n':
+                case 'N':
+                    // Next level
+                    if (this.currentLevel < this.levels.length - 1) {
+                        this.loadLevel(this.currentLevel + 1);
+                    }
+                    e.preventDefault();
+                    break;
+                case 'p':
+                case 'P':
+                    // Previous level
+                    if (this.currentLevel > 0) {
+                        this.loadLevel(this.currentLevel - 1);
+                    }
+                    e.preventDefault();
+                    break;
+                case 'l':
+                case 'L':
+                    // Open level selector
+                    this.showLevelSelector();
+                    e.preventDefault();
+                    break;
             }
         });
 
@@ -280,6 +302,10 @@ class MushroomManGame {
             if (this.currentLevel < this.levels.length - 1) {
                 this.loadLevel(this.currentLevel + 1);
             }
+        });
+
+        document.getElementById('chooseLevel').addEventListener('click', () => {
+            this.showLevelSelector();
         });
     }
 
@@ -302,6 +328,34 @@ class MushroomManGame {
             this.hideModal('levelFailedModal');
             this.loadLevel(this.currentLevel);
         });
+
+        // Level selector modal buttons
+        document.getElementById('modalGoToLevel').addEventListener('click', () => {
+            const levelInput = document.getElementById('levelInput');
+            const levelNum = parseInt(levelInput.value);
+
+            if (levelNum >= 1 && levelNum <= this.levels.length) {
+                this.hideModal('levelSelectorModal');
+                this.loadLevel(levelNum - 1); // Convert to 0-based index
+            }
+        });
+
+        document.getElementById('modalCancelLevel').addEventListener('click', () => {
+            this.hideModal('levelSelectorModal');
+        });
+
+        // Level input validation and preview
+        const levelInput = document.getElementById('levelInput');
+        levelInput.addEventListener('input', () => {
+            this.updateLevelPreview();
+        });
+
+        // Allow Enter key to submit level selection
+        levelInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('modalGoToLevel').click();
+            }
+        });
     }
 
     showModal(modalId, title, message) {
@@ -323,6 +377,56 @@ class MushroomManGame {
     hideModal(modalId) {
         const modal = document.getElementById(modalId);
         modal.classList.remove('show');
+    }
+
+    showLevelSelector() {
+        // Update max level
+        document.getElementById('maxLevel').textContent = this.levels.length;
+
+        // Set input to current level
+        const levelInput = document.getElementById('levelInput');
+        levelInput.value = this.currentLevel + 1; // Convert to 1-based
+        levelInput.max = this.levels.length;
+
+        // Update preview
+        this.updateLevelPreview();
+
+        // Show modal
+        this.showModal('levelSelectorModal');
+
+        // Focus input and select text
+        setTimeout(() => {
+            levelInput.focus();
+            levelInput.select();
+        }, 100);
+    }
+
+    updateLevelPreview() {
+        const levelInput = document.getElementById('levelInput');
+        const previewTitle = document.getElementById('previewTitle');
+        const levelError = document.getElementById('levelError');
+
+        const levelNum = parseInt(levelInput.value);
+
+        // Clear error
+        levelError.textContent = '';
+
+        // Validate
+        if (isNaN(levelNum) || levelNum < 1) {
+            previewTitle.textContent = 'Invalid level number';
+            levelError.textContent = 'Level must be at least 1';
+            return;
+        }
+
+        if (levelNum > this.levels.length) {
+            previewTitle.textContent = 'Invalid level number';
+            levelError.textContent = `Level must be ${this.levels.length} or less`;
+            return;
+        }
+
+        // Show level title
+        const level = this.levels[levelNum - 1];
+        previewTitle.textContent = level.title || 'Untitled';
     }
     
     movePlayer(dx, dy) {
@@ -378,6 +482,9 @@ class MushroomManGame {
 
         // Can't move through walls
         if (symbol === 'w' || symbol === 'i') return false;
+
+        // Can't move through dynamite - it blocks passage
+        if (symbol === 'd') return false;
 
         // Can't move through locks without keys
         if (symbol === 'l' && this.resources.keys === 0) return false;
@@ -456,10 +563,6 @@ class MushroomManGame {
                 break;
             case 'b': // Bomb
                 this.explodeBomb(x, y, false); // false = don't destroy impenetrable walls
-                this.checkExitDestroyed();
-                break;
-            case 'd': // Dynamite
-                this.explodeBomb(x, y, true); // true = destroy impenetrable walls
                 this.checkExitDestroyed();
                 break;
             case 'n': // Gun
@@ -550,18 +653,12 @@ class MushroomManGame {
                 break;
             }
 
-            // Bomb or dynamite - trigger explosion
-            if (symbol === 'b') {
-                tile.remove();
-                this.explodeBomb(bulletX, bulletY, false);
-                this.checkExitDestroyed();
-                break;
-            }
-
+            // Dynamite - destroying it causes level failure
             if (symbol === 'd') {
                 tile.remove();
-                this.explodeBomb(bulletX, bulletY, true);
-                this.checkExitDestroyed();
+                setTimeout(() => {
+                    this.showModal('levelFailedModal', 'Level Failed', 'You destroyed dynamite! Level failed.');
+                }, 300);
                 break;
             }
 
@@ -589,6 +686,7 @@ class MushroomManGame {
         // Collect all tiles to destroy first, then remove them
         // This prevents chain reactions from bombs being removed during iteration
         const tilesToDestroy = [];
+        let dynamiteDestroyed = false;
 
         // Explode in a 3x3 area around the center
         for (let dy = -1; dy <= 1; dy++) {
@@ -611,6 +709,11 @@ class MushroomManGame {
                 // Impenetrable walls only destroyed by dynamite
                 if (symbol === 'i' && !destroysImpenetrable) continue;
 
+                // Check if dynamite is being destroyed
+                if (symbol === 'd') {
+                    dynamiteDestroyed = true;
+                }
+
                 // Add tile to destroy list
                 tilesToDestroy.push(tile);
             }
@@ -623,6 +726,13 @@ class MushroomManGame {
             const y = tile.getAttribute('data-y');
             console.log(`  Destroying tile at (${x}, ${y}): ${symbol}`);
             tile.remove();
+        }
+
+        // If dynamite was destroyed, level fails
+        if (dynamiteDestroyed) {
+            setTimeout(() => {
+                this.showModal('levelFailedModal', 'Level Failed', 'Dynamite was destroyed! Level failed.');
+            }, 300);
         }
     }
 

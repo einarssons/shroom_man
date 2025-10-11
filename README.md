@@ -81,12 +81,16 @@ Based on level titles and element interactions:
 
 #### Bombs and Dynamite
 - Walking into a bomb triggers an explosion in a 3x3 area centered on the bomb
-- **Bombs destroy**: Regular walls, locks, keys, guards, money, cement, oxygen, holes, jellybeans, other bombs/dynamite, and **even the exit**
+- **Bombs destroy**: Regular walls, locks, keys, guards, money, cement, oxygen, holes, jellybeans, other bombs, and **even the exit**
 - **Bombs do NOT destroy**: The player (you survive the explosion) and impenetrable walls
-- Walking into dynamite triggers an explosion in a 3x3 area centered on the dynamite
-- **Dynamite destroys**: Everything that bombs destroy, **plus impenetrable walls**
+- **DYNAMITE RULES**: Dynamite is extremely dangerous and must be preserved!
+  - **Dynamite blocks movement** - you cannot walk into it (like a wall)
+  - Shooting dynamite with a gun = Level failure
+  - Destroying dynamite with a bomb explosion = Level failure
+  - **Any destruction of dynamite causes immediate level failure**
+  - Dynamite must remain intact to complete the level
 - **No chain reactions**: Bombs and dynamite within the blast radius are destroyed but do not explode themselves
-- **Warning**: If the exit is destroyed by an explosion, the level becomes impossible to complete and you must restart
+- **Warning**: If the exit is destroyed by a bomb explosion, the level becomes impossible to complete and you must restart
 
 #### Exit
 - The exit door is the goal of each level
@@ -98,8 +102,9 @@ Based on level titles and element interactions:
 - Walking into a gun fires a bullet in the direction you were moving
 - The bullet travels until it hits something
 - **Impenetrable walls** stop the bullet but are NOT destroyed
-- **Bombs and dynamite** are destroyed by the bullet and explode when hit
-- **Everything else** (regular walls, exits, guards, keys, locks, holes, jellybeans, other guns, cement, money, oxygen) is destroyed by the first hit
+- **Bombs** are destroyed by the bullet (they disappear without exploding)
+- **Dynamite** - shooting it causes level failure!
+- **Everything else** (regular walls, exits, guards, keys, locks, holes, jellybeans, other guns, cement, money, oxygen, water) is destroyed by the first hit
 - The gun itself is consumed (removed) after firing once
 - If the bullet destroys the exit, the level becomes impossible to complete
 
