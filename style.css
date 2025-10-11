@@ -48,6 +48,11 @@ body {
     font-weight: bold;
 }
 
+#levelBest {
+    color: #f39c12;
+    font-weight: bold;
+}
+
 #gameGrid {
     display: block;
     margin: 20px auto;

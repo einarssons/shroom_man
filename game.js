@@ -13,9 +13,76 @@ class MushroomManGame {
         this.moveCount = 0;
         this.tileSize = 20;
 
+        // Load progress from localStorage
+        this.loadProgress();
+
         this.loadLevels();
         this.setupControls();
         this.setupModals();
+    }
+
+    loadProgress() {
+        // Load saved progress from localStorage
+        const saved = localStorage.getItem('mushroomManProgress');
+        if (saved) {
+            try {
+                this.progress = JSON.parse(saved);
+            } catch (e) {
+                console.error('Failed to load progress:', e);
+                this.progress = {};
+            }
+        } else {
+            this.progress = {};
+        }
+        // progress structure: { levelIndex: { completed: true, bestMoves: 42 } }
+    }
+
+    saveProgress() {
+        // Save progress to localStorage
+        try {
+            localStorage.setItem('mushroomManProgress', JSON.stringify(this.progress));
+        } catch (e) {
+            console.error('Failed to save progress:', e);
+        }
+    }
+
+    getLevelProgress(levelIndex) {
+        return this.progress[levelIndex] || { completed: false, bestMoves: null };
+    }
+
+    updateLevelProgress(levelIndex, moves) {
+        if (!this.progress[levelIndex]) {
+            this.progress[levelIndex] = { completed: true, bestMoves: moves };
+        } else {
+            this.progress[levelIndex].completed = true;
+            if (this.progress[levelIndex].bestMoves === null || moves < this.progress[levelIndex].bestMoves) {
+                this.progress[levelIndex].bestMoves = moves;
+            }
+        }
+        this.saveProgress();
+    }
+
+    getLastPlayedLevel() {
+        try {
+            const lastLevel = localStorage.getItem('mushroomManLastLevel');
+            if (lastLevel !== null) {
+                const levelIndex = parseInt(lastLevel);
+                if (levelIndex >= 0 && levelIndex < this.levels.length) {
+                    return levelIndex;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load last level:', e);
+        }
+        return 0; // Default to first level
+    }
+
+    saveLastPlayedLevel(levelIndex) {
+        try {
+            localStorage.setItem('mushroomManLastLevel', levelIndex.toString());
+        } catch (e) {
+            console.error('Failed to save last level:', e);
+        }
     }
     
     async loadLevels() {
@@ -23,7 +90,10 @@ class MushroomManGame {
             const response = await fetch('./levels/orig.txt');
             const text = await response.text();
             this.parseLevels(text);
-            this.loadLevel(0);
+
+            // Load the last played level, or start at level 0
+            const lastLevel = this.getLastPlayedLevel();
+            this.loadLevel(lastLevel);
         } catch (error) {
             console.error('Failed to load levels:', error);
         }
@@ -87,21 +157,37 @@ class MushroomManGame {
     
     loadLevel(levelIndex) {
         if (levelIndex >= this.levels.length) return;
-        
+
         const level = this.levels[levelIndex];
         this.currentLevel = levelIndex;
         this.moveCount = 0;
         this.resources = { keys: 0, money: 0, cement: 0, oxygen: 0 };
-        
+
+        // Save this as the last played level
+        this.saveLastPlayedLevel(levelIndex);
+
         // Clear previous level
         this.gameGrid.innerHTML = '';
-        
+
+        // Get progress for this level
+        const progress = this.getLevelProgress(levelIndex);
+
         // Update UI
         document.getElementById('levelNumber').textContent = `Level: ${levelIndex + 1}`;
         document.getElementById('moveCount').textContent = `${this.moveCount}`;
         document.getElementById('levelTitle').textContent = level.title || 'Untitled';
         document.getElementById('levelAuthor').textContent = `Author: ${level.author || 'Unknown'}`;
-        
+
+        // Display best score if level has been completed
+        const bestElement = document.getElementById('levelBest');
+        if (progress.completed && progress.bestMoves !== null) {
+            bestElement.textContent = `⭐ Best: ${progress.bestMoves} moves`;
+            bestElement.style.display = 'inline';
+        } else {
+            bestElement.textContent = '';
+            bestElement.style.display = 'none';
+        }
+
         // Render level
         this.renderLevel(level);
         this.updateResourceDisplay();
@@ -1154,17 +1240,37 @@ class MushroomManGame {
     }
 
     handleLevelComplete() {
+        // Get previous best score
+        const prevProgress = this.getLevelProgress(this.currentLevel);
+        const isNewBest = prevProgress.bestMoves === null || this.moveCount < prevProgress.bestMoves;
+
+        // Update progress
+        this.updateLevelProgress(this.currentLevel, this.moveCount);
+
+        // Build message with best score info
+        let message = `You completed Level ${this.currentLevel + 1} in ${this.moveCount} moves!`;
+
+        if (isNewBest) {
+            if (prevProgress.bestMoves === null) {
+                message += '\n🎉 First time completing this level!';
+            } else {
+                message += `\n🏆 New best! (Previous: ${prevProgress.bestMoves} moves)`;
+            }
+        } else {
+            message += `\n⭐ Your best: ${prevProgress.bestMoves} moves`;
+        }
+
         if (this.currentLevel < this.levels.length - 1) {
             this.showModal(
                 'levelCompleteModal',
                 'Level Complete!',
-                `You completed Level ${this.currentLevel + 1} in ${this.moveCount} moves!`
+                message
             );
         } else {
             this.showModal(
                 'levelCompleteModal',
                 'Congratulations!',
-                `You completed all ${this.levels.length} levels! Final level completed in ${this.moveCount} moves.`
+                `You completed all ${this.levels.length} levels!\nFinal level completed in ${this.moveCount} moves.`
             );
         }
     }
