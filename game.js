@@ -111,28 +111,58 @@ class MushroomManGame {
         const grid = level.grid;
         const maxWidth = Math.max(...grid.map(row => this.cleanTeleporterCodes(row).length));
         const maxHeight = grid.length;
-        
+
         // Update SVG viewBox to fit the level
         this.gameGrid.setAttribute('viewBox', `0 0 ${maxWidth * this.tileSize} ${maxHeight * this.tileSize}`);
-        
+
+        // Store portal information for this level
+        this.portals = new Map(); // Maps "x,y" -> {pairId, direction}
+
         for (let y = 0; y < grid.length; y++) {
-            const row = this.cleanTeleporterCodes(grid[y]);
-            for (let x = 0; x < row.length; x++) {
-                const symbol = row[x];
-                this.createTile(symbol, x, y);
-                
+            const row = grid[y];
+            let x = 0;
+            let i = 0;
+
+            while (i < row.length) {
+                let symbol = row[i];
+                let portalInfo = null;
+
+                // Check if this is a portal (t followed by two digits)
+                if (symbol === 't' && i + 2 < row.length) {
+                    const pairId = row[i + 1];
+                    const direction = row[i + 2];
+
+                    if (/\d/.test(pairId) && /\d/.test(direction)) {
+                        // Valid portal code
+                        portalInfo = {
+                            pairId: parseInt(pairId),
+                            direction: parseInt(direction)
+                        };
+                        this.portals.set(`${x},${y}`, portalInfo);
+                        i += 3; // Skip the two digits
+                    } else {
+                        i++;
+                    }
+                } else {
+                    i++;
+                }
+
+                this.createTile(symbol, x, y, portalInfo);
+
                 // Track player start position
                 if (symbol === 's') {
                     this.playerPos = { x, y };
                 }
+
+                x++;
             }
         }
     }
     
-    createTile(symbol, x, y) {
+    createTile(symbol, x, y, portalInfo = null) {
         const tileX = x * this.tileSize;
         const tileY = y * this.tileSize;
-        
+
         let element;
         
         switch (symbol) {
@@ -184,8 +214,13 @@ class MushroomManGame {
             case '~': // Water
                 element = this.createSVGImage(tileX, tileY, './images/water.svg', 'water');
                 break;
-            case 't': // Teleporter
-                element = this.createCircle(tileX + 10, tileY + 10, 8, '#800080', 'teleporter');
+            case 't': // Teleporter/Portal
+                if (portalInfo) {
+                    element = this.createPortal(tileX, tileY, portalInfo.pairId, portalInfo.direction);
+                } else {
+                    // Fallback to simple circle if no portal info
+                    element = this.createCircle(tileX + 10, tileY + 10, 8, '#800080', 'teleporter');
+                }
                 break;
             default:
                 return; // Empty space
@@ -195,6 +230,13 @@ class MushroomManGame {
             element.setAttribute('data-x', x);
             element.setAttribute('data-y', y);
             element.setAttribute('data-symbol', symbol);
+
+            // Store portal info if this is a portal
+            if (portalInfo) {
+                element.setAttribute('data-portal-pair', portalInfo.pairId);
+                element.setAttribute('data-portal-direction', portalInfo.direction);
+            }
+
             this.gameGrid.appendChild(element);
         }
     }
@@ -233,6 +275,104 @@ class MushroomManGame {
         image.setAttribute('href', href);
         image.setAttribute('class', className);
         return image;
+    }
+
+    createPortal(x, y, pairId, direction) {
+        // Color scheme for different portal pairs
+        const colors = [
+            '#FF00FF', // Magenta (pair 1)
+            '#FF0000', // Red (pair 2)
+            '#FFFF00', // Yellow (pair 3)
+            '#00FF00', // Green (pair 4)
+            '#00FFFF', // Cyan (pair 5)
+            '#FF00AA', // Pink (pair 6)
+            '#FF8800', // Orange (pair 7)
+            '#8800FF', // Purple (pair 8)
+            '#00FF88'  // Teal (pair 9)
+        ];
+
+        const color = colors[(pairId - 1) % colors.length];
+
+        // Create group for portal
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'portal');
+
+        // Background square with gradient
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y);
+        rect.setAttribute('width', this.tileSize);
+        rect.setAttribute('height', this.tileSize);
+        rect.setAttribute('fill', color);
+        rect.setAttribute('opacity', '0.8');
+        group.appendChild(rect);
+
+        // Animated wave pattern
+        for (let i = 0; i < 3; i++) {
+            const wave = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            const offset = i * 2;
+            const waveSize = this.tileSize - 6 - (offset * 2);
+
+            // Only create wave if it has positive dimensions
+            if (waveSize > 0) {
+                wave.setAttribute('x', x + 3 + offset);
+                wave.setAttribute('y', y + 3 + offset);
+                wave.setAttribute('width', waveSize);
+                wave.setAttribute('height', waveSize);
+                wave.setAttribute('fill', 'none');
+                wave.setAttribute('stroke', '#FFFFFF');
+                wave.setAttribute('stroke-width', '0.5');
+                wave.setAttribute('opacity', '0.6');
+
+                // Simple animation using CSS
+                const animateOpacity = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                animateOpacity.setAttribute('attributeName', 'opacity');
+                animateOpacity.setAttribute('values', '0.2;0.6;0.2');
+                animateOpacity.setAttribute('dur', '2s');
+                animateOpacity.setAttribute('begin', `${i * 0.3}s`);
+                animateOpacity.setAttribute('repeatCount', 'indefinite');
+                wave.appendChild(animateOpacity);
+
+                group.appendChild(wave);
+            }
+        }
+
+        // Direction arrow/triangle
+        const arrow = this.createDirectionArrow(x, y, direction);
+        group.appendChild(arrow);
+
+        return group;
+    }
+
+    createDirectionArrow(x, y, direction) {
+        const centerX = x + this.tileSize / 2;
+        const centerY = y + this.tileSize / 2;
+        const arrowSize = 4;
+
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+
+        let points;
+        switch (direction) {
+            case 1: // Up
+                points = `${centerX},${centerY - arrowSize} ${centerX - arrowSize},${centerY + arrowSize} ${centerX + arrowSize},${centerY + arrowSize}`;
+                break;
+            case 2: // Down
+                points = `${centerX},${centerY + arrowSize} ${centerX - arrowSize},${centerY - arrowSize} ${centerX + arrowSize},${centerY - arrowSize}`;
+                break;
+            case 3: // Left
+                points = `${centerX - arrowSize},${centerY} ${centerX + arrowSize},${centerY - arrowSize} ${centerX + arrowSize},${centerY + arrowSize}`;
+                break;
+            case 4: // Right
+                points = `${centerX + arrowSize},${centerY} ${centerX - arrowSize},${centerY - arrowSize} ${centerX - arrowSize},${centerY + arrowSize}`;
+                break;
+        }
+
+        polygon.setAttribute('points', points);
+        polygon.setAttribute('fill', '#FFFFFF');
+        polygon.setAttribute('stroke', '#000000');
+        polygon.setAttribute('stroke-width', '0.5');
+
+        return polygon;
     }
     
     updateResourceDisplay() {
@@ -492,6 +632,54 @@ class MushroomManGame {
         // Can't move through guards without money
         if (symbol === 'g' && this.resources.money === 0) return false;
 
+        // Portal - check if exit destination is valid
+        if (symbol === 't') {
+            const pairId = parseInt(tile.getAttribute('data-portal-pair'));
+            const pairedPortal = this.findPairedPortal(pairId, x, y);
+
+            if (pairedPortal) {
+                // Calculate exit position
+                let exitX = pairedPortal.x;
+                let exitY = pairedPortal.y;
+
+                switch (pairedPortal.direction) {
+                    case 1: exitY -= 1; break; // Up
+                    case 2: exitY += 1; break; // Down
+                    case 3: exitX -= 1; break; // Left
+                    case 4: exitX += 1; break; // Right
+                }
+
+                // Check if exit position is valid (recursively, but prevent infinite loop by checking for portal)
+                const exitTile = this.getTileAt(exitX, exitY);
+                if (!exitTile) return true; // Empty exit - OK
+
+                const exitSymbol = exitTile.getAttribute('data-symbol');
+
+                // Can't exit into walls or dynamite
+                if (exitSymbol === 'w' || exitSymbol === 'i' || exitSymbol === 'd') return false;
+
+                // Can't exit into lock without key
+                if (exitSymbol === 'l' && this.resources.keys === 0) return false;
+
+                // Can't exit into guard without money
+                if (exitSymbol === 'g' && this.resources.money === 0) return false;
+
+                // Can't exit into jellybean that can't be pushed
+                if (exitSymbol === 'j') {
+                    // Would need to calculate if jellybean can be pushed in exit direction
+                    // For now, block portal entry if jellybean is at exit
+                    return false;
+                }
+
+                // Can exit into hole only if we have cement (or will die)
+                // Can exit into water only if we have oxygen (or will drown)
+                // These are OK - player will handle consequences
+
+                return true;
+            }
+            return false; // No paired portal found
+        }
+
         // Jellybean - can push if there's empty space behind it
         if (symbol === 'j') {
             const behindX = x + dx;
@@ -525,12 +713,91 @@ class MushroomManGame {
     getTileAt(x, y) {
         return this.gameGrid.querySelector(`[data-x="${x}"][data-y="${y}"]`);
     }
+
+    findPairedPortal(pairId, currentX, currentY) {
+        // Find the other portal with the same pair ID
+        const allPortals = this.gameGrid.querySelectorAll('[data-symbol="t"]');
+        for (const portal of allPortals) {
+            const portalPairId = parseInt(portal.getAttribute('data-portal-pair'));
+            const portalX = parseInt(portal.getAttribute('data-x'));
+            const portalY = parseInt(portal.getAttribute('data-y'));
+
+            // Same pair ID but different location
+            if (portalPairId === pairId && (portalX !== currentX || portalY !== currentY)) {
+                const direction = parseInt(portal.getAttribute('data-portal-direction'));
+                return { x: portalX, y: portalY, direction: direction };
+            }
+        }
+        return null;
+    }
+
+    teleportPlayer(portalX, portalY, exitDirection) {
+        // Calculate exit position based on direction
+        // 1 = up, 2 = down, 3 = left, 4 = right
+        let exitX = portalX;
+        let exitY = portalY;
+
+        switch (exitDirection) {
+            case 1: // Up
+                exitY -= 1;
+                break;
+            case 2: // Down
+                exitY += 1;
+                break;
+            case 3: // Left
+                exitX -= 1;
+                break;
+            case 4: // Right
+                exitX += 1;
+                break;
+        }
+
+        // Update player position
+        this.playerPos.x = exitX;
+        this.playerPos.y = exitY;
+
+        // Update player visual position
+        const player = this.gameGrid.querySelector('.player');
+        if (player) {
+            player.setAttribute('x', exitX * this.tileSize);
+            player.setAttribute('y', exitY * this.tileSize);
+            this.gameGrid.appendChild(player); // Ensure player is on top
+        }
+
+        // Handle interaction at the exit tile
+        this.handleTileInteraction(exitX, exitY);
+    }
+
+    destroyPortalPair(pairId) {
+        // Remove both portals with this pair ID
+        const allPortals = this.gameGrid.querySelectorAll('[data-symbol="t"]');
+        for (const portal of allPortals) {
+            const portalPairId = parseInt(portal.getAttribute('data-portal-pair'));
+            if (portalPairId === pairId) {
+                portal.remove();
+            }
+        }
+    }
     
     handleTileInteraction(x, y, dx = 0, dy = 0) {
         const tile = this.getTileAt(x, y);
         if (!tile) return;
 
         const symbol = tile.getAttribute('data-symbol');
+
+        // Handle portal teleportation
+        if (symbol === 't') {
+            const pairId = parseInt(tile.getAttribute('data-portal-pair'));
+            const exitDirection = parseInt(tile.getAttribute('data-portal-direction'));
+
+            // Find the paired portal
+            const pairedPortal = this.findPairedPortal(pairId, x, y);
+            if (pairedPortal) {
+                // Teleport to paired portal
+                this.teleportPlayer(pairedPortal.x, pairedPortal.y, pairedPortal.direction);
+            }
+            return;
+        }
 
         switch (symbol) {
             case 'k': // Key
@@ -662,6 +929,14 @@ class MushroomManGame {
                 break;
             }
 
+            // Portal - destroy both portals in the pair
+            if (symbol === 't') {
+                const pairId = parseInt(tile.getAttribute('data-portal-pair'));
+                this.destroyPortalPair(pairId);
+                console.log(`Destroyed portal pair ${pairId}`);
+                break;
+            }
+
             // Everything else - destroy the first thing hit and stop
             tile.remove();
             console.log(`Destroyed ${symbol}`);
@@ -686,6 +961,7 @@ class MushroomManGame {
         // Collect all tiles to destroy first, then remove them
         // This prevents chain reactions from bombs being removed during iteration
         const tilesToDestroy = [];
+        const portalPairsToDestroy = new Set();
         let dynamiteDestroyed = false;
 
         // Explode in a 3x3 area around the center
@@ -714,6 +990,12 @@ class MushroomManGame {
                     dynamiteDestroyed = true;
                 }
 
+                // Track portal pairs to destroy
+                if (symbol === 't') {
+                    const pairId = parseInt(tile.getAttribute('data-portal-pair'));
+                    portalPairsToDestroy.add(pairId);
+                }
+
                 // Add tile to destroy list
                 tilesToDestroy.push(tile);
             }
@@ -726,6 +1008,19 @@ class MushroomManGame {
             const y = tile.getAttribute('data-y');
             console.log(`  Destroying tile at (${x}, ${y}): ${symbol}`);
             tile.remove();
+        }
+
+        // Destroy paired portals
+        for (const pairId of portalPairsToDestroy) {
+            // Find and remove the other portal in this pair (if it wasn't already destroyed)
+            const allPortals = this.gameGrid.querySelectorAll('[data-symbol="t"]');
+            for (const portal of allPortals) {
+                const portalPairId = parseInt(portal.getAttribute('data-portal-pair'));
+                if (portalPairId === pairId) {
+                    console.log(`  Destroying paired portal ${pairId}`);
+                    portal.remove();
+                }
+            }
         }
 
         // If dynamite was destroyed, level fails
