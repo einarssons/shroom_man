@@ -431,23 +431,23 @@ class MushroomManGame {
     createDirectionArrow(x, y, direction) {
         const centerX = x + this.tileSize / 2;
         const centerY = y + this.tileSize / 2;
-        const arrowSize = 4;
+        const arrowWidth = 3; // Width of arrow base
 
         const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 
         let points;
         switch (direction) {
-            case 1: // Up
-                points = `${centerX},${centerY - arrowSize} ${centerX - arrowSize},${centerY + arrowSize} ${centerX + arrowSize},${centerY + arrowSize}`;
+            case 1: // Up - tip touches top edge
+                points = `${centerX},${y} ${centerX - arrowWidth},${centerY} ${centerX + arrowWidth},${centerY}`;
                 break;
-            case 2: // Down
-                points = `${centerX},${centerY + arrowSize} ${centerX - arrowSize},${centerY - arrowSize} ${centerX + arrowSize},${centerY - arrowSize}`;
+            case 2: // Down - tip touches bottom edge
+                points = `${centerX},${y + this.tileSize} ${centerX - arrowWidth},${centerY} ${centerX + arrowWidth},${centerY}`;
                 break;
-            case 3: // Left
-                points = `${centerX - arrowSize},${centerY} ${centerX + arrowSize},${centerY - arrowSize} ${centerX + arrowSize},${centerY + arrowSize}`;
+            case 3: // Left - tip touches left edge
+                points = `${x},${centerY} ${centerX},${centerY - arrowWidth} ${centerX},${centerY + arrowWidth}`;
                 break;
-            case 4: // Right
-                points = `${centerX + arrowSize},${centerY} ${centerX - arrowSize},${centerY - arrowSize} ${centerX - arrowSize},${centerY + arrowSize}`;
+            case 4: // Right - tip touches right edge
+                points = `${x + this.tileSize},${centerY} ${centerX},${centerY - arrowWidth} ${centerX},${centerY + arrowWidth}`;
                 break;
         }
 
