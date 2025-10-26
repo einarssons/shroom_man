@@ -798,15 +798,25 @@ class MushroomManGame {
 
         // Check bounds and collision
         if (this.canMoveTo(newX, newY, dx, dy)) {
+            // Update the old position's data-symbol from 's' to empty
+            // This prevents the start position from being considered "occupied"
+            // but keeps the player visual element
+            const player = this.gameGrid.querySelector('.player');
+            if (player && player.getAttribute('data-symbol') === 's') {
+                // Change symbol to indicate it's no longer the start position
+                player.setAttribute('data-symbol', 'player');
+            }
+
             this.playerPos.x = newX;
             this.playerPos.y = newY;
             this.moveCount++;
 
             // Update player position
-            const player = this.gameGrid.querySelector('.player');
             if (player) {
                 player.setAttribute('x', newX * this.tileSize);
                 player.setAttribute('y', newY * this.tileSize);
+                player.setAttribute('data-x', newX);
+                player.setAttribute('data-y', newY);
 
                 // Ensure player is always on top by moving to end of SVG
                 this.gameGrid.appendChild(player);
