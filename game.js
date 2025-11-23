@@ -84,7 +84,7 @@ class MushroomManGame {
             console.error('Failed to save last level:', e);
         }
     }
-    
+
     async loadLevels() {
         try {
             const response = await fetch('./levels/orig.txt');
@@ -98,20 +98,20 @@ class MushroomManGame {
             console.error('Failed to load levels:', error);
         }
     }
-    
+
     parseLevels(text) {
         const lines = text.split('\n');
         let currentLevel = null;
         let gridLines = [];
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            
+
             // Skip version info and empty lines
             if (line === '' || line.startsWith('Mushroom Man') || /^\d+$/.test(line)) {
                 continue;
             }
-            
+
             // Check if this is a level title (not a grid line)
             if (!this.isGridLine(line)) {
                 // If we have accumulated grid lines, save the previous level
@@ -120,7 +120,7 @@ class MushroomManGame {
                     this.levels.push(currentLevel);
                     gridLines = [];
                 }
-                
+
                 // Start new level
                 currentLevel = {
                     title: line,
@@ -135,21 +135,21 @@ class MushroomManGame {
                 }
             }
         }
-        
+
         // Don't forget the last level
         if (gridLines.length > 0 && currentLevel) {
             currentLevel.grid = gridLines;
             this.levels.push(currentLevel);
         }
-        
+
         console.log(`Loaded ${this.levels.length} levels`);
     }
-    
+
     isGridLine(line) {
         // Grid lines don't contain capital letters (titles/authors do)
         return !/[A-Z]/.test(line);
     }
-    
+
     cleanTeleporterCodes(line) {
         // Remove digits from teleporter codes (t11 -> t)
         return line.replace(/t\d+/g, 't');
@@ -190,7 +190,7 @@ class MushroomManGame {
         this.renderLevel(level);
         this.updateResourceDisplay();
     }
-    
+
     renderLevel(level) {
         const grid = level.grid;
         const maxWidth = Math.max(...grid.map(row => this.cleanTeleporterCodes(row).length));
@@ -242,19 +242,19 @@ class MushroomManGame {
             }
         }
     }
-    
+
     createTile(symbol, x, y, portalInfo = null) {
         const tileX = x * this.tileSize;
         const tileY = y * this.tileSize;
 
         let element;
-        
+
         switch (symbol) {
             case 'w': // Wall
-                element = this.createRect(tileX, tileY, '#8B4513', 'wall');
+                element = this.createWall(tileX, tileY);
                 break;
             case 'i': // Impenetrable wall
-                element = this.createRect(tileX, tileY, '#444444', 'impenetrable-wall');
+                element = this.createImpenetrableWall(tileX, tileY);
                 break;
             case 's': // Start/Player
                 element = this.createSVGImage(tileX, tileY, './images/mushroom_man.svg', 'player');
@@ -296,7 +296,7 @@ class MushroomManGame {
                 element = this.createSVGImage(tileX, tileY, './images/gun.svg', 'gun');
                 break;
             case '~': // Water
-                element = this.createSVGImage(tileX, tileY, './images/water.svg', 'water');
+                element = this.createWater(tileX, tileY);
                 break;
             case 't': // Teleporter/Portal
                 if (portalInfo) {
@@ -309,7 +309,7 @@ class MushroomManGame {
             default:
                 return; // Empty space
         }
-        
+
         if (element) {
             element.setAttribute('data-x', x);
             element.setAttribute('data-y', y);
@@ -324,7 +324,265 @@ class MushroomManGame {
             this.gameGrid.appendChild(element);
         }
     }
-    
+
+    createWall(x, y) {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'wall');
+
+        // Create a unique clip path for this wall
+        const clipId = `wall-clip-${x}-${y}`;
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clipPath.setAttribute('id', clipId);
+
+        const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        clipRect.setAttribute('x', x);
+        clipRect.setAttribute('y', y);
+        clipRect.setAttribute('width', this.tileSize);
+        clipRect.setAttribute('height', this.tileSize);
+
+        clipPath.appendChild(clipRect);
+        defs.appendChild(clipPath);
+        group.appendChild(defs);
+
+        // Apply clip path to the group
+        group.setAttribute('clip-path', `url(#${clipId})`);
+
+        // Mortar background
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', x);
+        bg.setAttribute('y', y);
+        bg.setAttribute('width', this.tileSize);
+        bg.setAttribute('height', this.tileSize);
+        bg.setAttribute('fill', '#8B4513'); // SaddleBrown
+        group.appendChild(bg);
+
+        // Bricks
+        const brickHeight = this.tileSize / 4;
+        const brickWidth = this.tileSize / 2;
+        const brickColor = '#A0522D'; // Sienna
+
+        for (let row = 0; row < 4; row++) {
+            const offsetY = row * brickHeight;
+            const offsetX = (row % 2 === 0) ? 0 : -brickWidth / 2;
+
+            for (let col = 0; col < 3; col++) {
+                const brickX = x + offsetX + (col * brickWidth);
+                const brickY = y + offsetY;
+
+                const brick = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                brick.setAttribute('x', brickX + 1); // +1 for mortar gap
+                brick.setAttribute('y', brickY + 1);
+                brick.setAttribute('width', brickWidth - 2);
+                brick.setAttribute('height', brickHeight - 2);
+                brick.setAttribute('fill', brickColor);
+
+                group.appendChild(brick);
+            }
+        }
+        return group;
+    }
+
+    createImpenetrableWall(x, y) {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'impenetrable-wall');
+
+        // Create a unique clip path for this wall
+        const clipId = `imp-wall-clip-${x}-${y}`;
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clipPath.setAttribute('id', clipId);
+
+        const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        clipRect.setAttribute('x', x);
+        clipRect.setAttribute('y', y);
+        clipRect.setAttribute('width', this.tileSize);
+        clipRect.setAttribute('height', this.tileSize);
+
+        clipPath.appendChild(clipRect);
+        defs.appendChild(clipPath);
+        group.appendChild(defs);
+
+        // Apply clip path to the group
+        group.setAttribute('clip-path', `url(#${clipId})`);
+
+        // Base metal plate
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y);
+        rect.setAttribute('width', this.tileSize);
+        rect.setAttribute('height', this.tileSize);
+        rect.setAttribute('fill', '#555555');
+        rect.setAttribute('stroke', '#222222');
+        rect.setAttribute('stroke-width', '2');
+        group.appendChild(rect);
+
+        // Inner plate (bevel effect)
+        const innerRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        innerRect.setAttribute('x', x + 3);
+        innerRect.setAttribute('y', y + 3);
+        innerRect.setAttribute('width', this.tileSize - 6);
+        innerRect.setAttribute('height', this.tileSize - 6);
+        innerRect.setAttribute('fill', 'none');
+        innerRect.setAttribute('stroke', '#777777');
+        innerRect.setAttribute('stroke-width', '1');
+        group.appendChild(innerRect);
+
+        // Rivets
+        const rivetPositions = [
+            { rx: x + 4, ry: y + 4 },
+            { rx: x + this.tileSize - 4, ry: y + 4 },
+            { rx: x + 4, ry: y + this.tileSize - 4 },
+            { rx: x + this.tileSize - 4, ry: y + this.tileSize - 4 }
+        ];
+
+        rivetPositions.forEach(pos => {
+            const rivet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            rivet.setAttribute('cx', pos.rx);
+            rivet.setAttribute('cy', pos.ry);
+            rivet.setAttribute('r', '1.5');
+            rivet.setAttribute('fill', '#AAAAAA');
+            rivet.setAttribute('stroke', '#222222');
+            rivet.setAttribute('stroke-width', '0.5');
+            group.appendChild(rivet);
+        });
+
+        // Cross brace (X shape)
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x + 4},${y + 4} L ${x + this.tileSize - 4},${y + this.tileSize - 4} M ${x + this.tileSize - 4},${y + 4} L ${x + 4},${y + this.tileSize - 4}`);
+        path.setAttribute('stroke', '#333333');
+        path.setAttribute('stroke-width', '1');
+        path.setAttribute('opacity', '0.5');
+        group.appendChild(path);
+
+        return group;
+    }
+
+    createWater(x, y) {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'water');
+
+        // Water background
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y);
+        rect.setAttribute('width', this.tileSize);
+        rect.setAttribute('height', this.tileSize);
+        rect.setAttribute('fill', '#0077BE'); // Ocean Blue
+        group.appendChild(rect);
+
+        // Waves
+        for (let i = 0; i < 3; i++) {
+            const wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const waveY = y + 5 + (i * 5);
+
+            // Wave path
+            const d = `M ${x},${waveY} Q ${x + 5},${waveY - 2} ${x + 10},${waveY} T ${x + 20},${waveY}`;
+            wave.setAttribute('d', d);
+            wave.setAttribute('fill', 'none');
+            wave.setAttribute('stroke', '#FFFFFF');
+            wave.setAttribute('stroke-width', '1');
+            wave.setAttribute('opacity', '0.5');
+
+            // Animate wave
+            const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+            animate.setAttribute('attributeName', 'd');
+            animate.setAttribute('values',
+                `M ${x},${waveY} Q ${x + 5},${waveY - 2} ${x + 10},${waveY} T ${x + 20},${waveY};` +
+                `M ${x},${waveY} Q ${x + 5},${waveY + 2} ${x + 10},${waveY} T ${x + 20},${waveY};` +
+                `M ${x},${waveY} Q ${x + 5},${waveY - 2} ${x + 10},${waveY} T ${x + 20},${waveY}`
+            );
+            animate.setAttribute('dur', `${2 + i * 0.5}s`);
+            animate.setAttribute('repeatCount', 'indefinite');
+
+            wave.appendChild(animate);
+            group.appendChild(wave);
+        }
+
+        return group;
+    }
+
+    createHole(x, y) {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'hole');
+
+        // Background (ground around hole)
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', x);
+        bg.setAttribute('y', y);
+        bg.setAttribute('width', this.tileSize);
+        bg.setAttribute('height', this.tileSize);
+        bg.setAttribute('fill', '#5D4037'); // Dark brown ground
+        group.appendChild(bg);
+
+        // The Hole (black circle)
+        const hole = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        hole.setAttribute('cx', x + this.tileSize / 2);
+        hole.setAttribute('cy', y + this.tileSize / 2);
+        hole.setAttribute('r', (this.tileSize / 2) - 2);
+        hole.setAttribute('fill', '#000000');
+        group.appendChild(hole);
+
+        // Inner shadow/depth gradient simulation (concentric circles)
+        const innerHole = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        innerHole.setAttribute('cx', x + this.tileSize / 2);
+        innerHole.setAttribute('cy', y + this.tileSize / 2);
+        innerHole.setAttribute('r', (this.tileSize / 2) - 5);
+        innerHole.setAttribute('fill', '#1a1a1a'); // Slightly lighter black
+        group.appendChild(innerHole);
+
+        const deepHole = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        deepHole.setAttribute('cx', x + this.tileSize / 2);
+        deepHole.setAttribute('cy', y + this.tileSize / 2);
+        deepHole.setAttribute('r', (this.tileSize / 2) - 7);
+        deepHole.setAttribute('fill', '#000000');
+        group.appendChild(deepHole);
+
+        return group;
+    }
+
+    createExit(x, y) {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'exit');
+
+        // Door frame - fills the whole tile
+        const frame = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        frame.setAttribute('x', x);
+        frame.setAttribute('y', y);
+        frame.setAttribute('width', this.tileSize);
+        frame.setAttribute('height', this.tileSize);
+        frame.setAttribute('fill', '#4E342E'); // Dark wood
+        frame.setAttribute('stroke', '#3E2723');
+        frame.setAttribute('stroke-width', '1');
+        group.appendChild(frame);
+
+        // Door opening (darkness)
+        const opening = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        opening.setAttribute('x', x + 2);
+        opening.setAttribute('y', y + 2);
+        opening.setAttribute('width', this.tileSize - 4);
+        opening.setAttribute('height', this.tileSize - 2);
+        opening.setAttribute('fill', '#000000');
+        group.appendChild(opening);
+
+        // Light at the end of the tunnel (or stairs)
+        const stairs = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        stairs.setAttribute('d', `M ${x + 4},${y + this.tileSize - 4} L ${x + this.tileSize - 4},${y + this.tileSize - 4} L ${x + this.tileSize - 6},${y + 8} L ${x + 6},${y + 8} Z`);
+        stairs.setAttribute('fill', '#FFD700'); // Gold light
+        stairs.setAttribute('opacity', '0.3');
+        group.appendChild(stairs);
+
+        // Exit sign text (optional, simplified as a green rect above)
+        const sign = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        sign.setAttribute('x', x + 4);
+        sign.setAttribute('y', y + 1);
+        sign.setAttribute('width', this.tileSize - 8);
+        sign.setAttribute('height', 3);
+        sign.setAttribute('fill', '#00FF00');
+        group.appendChild(sign);
+
+        return group;
+    }
     createRect(x, y, fill, className) {
         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         rect.setAttribute('x', x);
@@ -337,7 +595,7 @@ class MushroomManGame {
         rect.setAttribute('class', className);
         return rect;
     }
-    
+
     createCircle(cx, cy, r, fill, className) {
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', cx);
@@ -349,7 +607,7 @@ class MushroomManGame {
         circle.setAttribute('class', className);
         return circle;
     }
-    
+
     createSVGImage(x, y, href, className) {
         const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
         image.setAttribute('x', x);
@@ -458,14 +716,14 @@ class MushroomManGame {
 
         return polygon;
     }
-    
+
     updateResourceDisplay() {
         document.getElementById('keyCount').textContent = this.resources.keys;
         document.getElementById('moneyCount').textContent = this.resources.money;
         document.getElementById('cementCount').textContent = this.resources.cement;
         document.getElementById('oxygenCount').textContent = this.resources.oxygen;
     }
-    
+
     setupControls() {
         document.addEventListener('keydown', (e) => {
             switch (e.key) {
@@ -774,7 +1032,7 @@ class MushroomManGame {
         const level = this.levels[levelNum - 1];
         previewTitle.textContent = level.title || 'Untitled';
     }
-    
+
     movePlayer(dx, dy) {
         const newX = this.playerPos.x + dx;
         const newY = this.playerPos.y + dy;
@@ -829,7 +1087,7 @@ class MushroomManGame {
             this.updateMovesDisplay();
         }
     }
-    
+
     canMoveTo(x, y, dx, dy) {
         const tile = this.getTileAt(x, y);
         if (!tile) return true; // Empty space - can move
@@ -925,7 +1183,7 @@ class MushroomManGame {
 
         return true;
     }
-    
+
     getTileAt(x, y) {
         return this.gameGrid.querySelector(`[data-x="${x}"][data-y="${y}"]`);
     }
@@ -1000,7 +1258,7 @@ class MushroomManGame {
             }
         }
     }
-    
+
     handleTileInteraction(x, y, dx = 0, dy = 0) {
         const tile = this.getTileAt(x, y);
         if (!tile) return;
@@ -1103,7 +1361,7 @@ class MushroomManGame {
 
         this.updateResourceDisplay();
     }
-    
+
     checkExitDestroyed() {
         // Check if exit still exists on the grid
         const exitExists = this.gameGrid.querySelector('[data-symbol="e"]');
