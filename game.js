@@ -805,7 +805,7 @@ class MushroomManGame {
         const minSwipeDistance = 40;
 
         // Cooldown to prevent rapid-fire moves (in milliseconds)
-        const moveCooldown = 250;
+        const moveCooldown = 50;
         let lastMoveTime = 0;
 
         // Add touch listeners to the game grid only (not container to avoid duplicates)
