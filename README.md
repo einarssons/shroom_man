@@ -1,5 +1,7 @@
 # Mushroom Man
 
+Play it at [https://einarssons.github.io/shroom_man/][gh-pages]
+
 Old PC, but also ZX Spectrum Game
 
 [Entry in World of Spectrum](https://worldofspectrum.net/item/0023117/)
@@ -122,4 +124,6 @@ Based on level titles and element interactions:
 #### Other Mechanics
 - Teleports transport you between numbered pairs
 
-The game features over 100 levels with increasing complexity, combining puzzle-solving elements with strategic gameplay mechanics. 
+The game features over 100 levels with increasing complexity, combining puzzle-solving elements with strategic gameplay mechanics.
+
+[gh-pages]: https://einarssons.github.io/shroom_man/
